@@ -4,6 +4,7 @@ import requests
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv # หรือ load_dotenv
+from http.server import BaseHTTPRequestHandler
 load_dotenv()  # สั่งให้โหลดค่าจากไฟล์ .env เข้าสู่ระบบ
 
 # 🛠️ ตั้งค่าส่วนตัวของคุณตรงนี้
@@ -124,6 +125,22 @@ def run_agent_workflow():
 
     except Exception as e:
         print(f"❌ เกิดข้อผิดพลาดในการหั่นส่งข้อความ: {e}")
+
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        try:
+            print("🚀 เว็บโดนปลุก! เริ่มรันระบบ Agent Workflow...")
+            run_agent_workflow()
+            
+            # ส่งสถานะกลับไปบอกเว็บตั้งเวลาว่ารันเสร็จแล้วนะ
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain; charset=utf-8')
+            self.end_headers()
+            self.wfile.write("บอททำงานและส่ง Discord สำเร็จเรียบร้อยแล้ว!".encode('utf-8'))
+        except Exception as e:
+            self.send_response(500)
+            self.end_headers()
+            self.wfile.write(f"เกิดข้อผิดพลาด: {e}".encode('utf-8'))
 
 if __name__ == "__main__":
     print(f"🚀 เริ่มเปิดระบบ Agent Workflow (ทำงานอัตโนมัติทุกๆ {RUN_EVERY_X_HOURS} ชั่วโมง)...")
