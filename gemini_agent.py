@@ -105,10 +105,12 @@ def run_agent_workflow():
         # วนลูปส่งข้อความที่หั่นแบบสวยงามแล้วเข้า Discord
         for index, chunk in enumerate(chunks):
             # เสริมป้ายบอกพาร์ทไว้ด้านบนสุด เพื่อไม่ให้รบกวนเนื้อหาด้านล่าง
-            if len(chunks) > 1:
-                chunk_content = f"*[Part {index + 1}/{len(chunks)}]*\n{chunk}"
-            else:
-                chunk_content = chunk
+            # if len(chunks) > 1:
+            #     chunk_content = f"*[Part {index + 1}/{len(chunks)}]*\n{chunk}"
+            # else:
+            #     chunk_content = chunk
+            
+            chunk_content = chunk # ไม่ต้องใส่ป้ายพาร์ท เพราะหั่นตามย่อหน้าแล้วน่าจะโอเค
                 
             payload = {"content": chunk_content}
             response = requests.post(DISCORD_WEBHOOK_URL, json=payload)
