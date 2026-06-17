@@ -29,14 +29,14 @@ def run_agent_workflow():
     )
     real_market_data = news_response.text
 
-    print("⚡ [2/4] ข้อมูลข่าวจริงมาแล้ว กำลังส่งให้ Agent Bull และ Bear ดีเบตกัน...")
+    print("⚡ [2/4] ข้อมูลข่าวจริงมาแล้ว กำลังส่งให้ Agent ดีเบตกัน...")
     prompt_debate = f"""
     คุณคือทีมวิเคราะห์กลยุทธ์ โปรดวิเคราะห์ข้อมูลข่าวสารจริงต่อไปนี้:
     {real_market_data}
 
     จงจำลองการโต้เถียง (Debate) ระหว่างผู้เชี่ยวชาญ 2 คนอย่างดุเดือด:
-    - [Agent A: The Aggressive Bull] - มองโลกแง่ดี หาเหตุผลสนับสนุนจากข่าวว่าทำไมต้อง 'ซื้อเพิ่มทันที'
-    - [Agent B: The Paranoid Bear] - มองโลกแง่ร้าย ระแวงทุกสัญญาณ หาเหตุผลเตือนว่าทำไมควร 'ขายหรืออยู่เฉยๆ'
+    - [Agent A: The Economist] - เชี่ยวชาญด้านเศรษฐศาสตร์ เชื่อมโยงข้อมูลข่าวสารกับทฤษฎีทางเเศรษฐศาสตร์
+    - [Agent B: The Realistic] - เชี่ยวชาญด้านการลงทุนจริง เชื่อมโยงข้อมูลข่าวสารกับสถานการณ์ตลาดจริง อธิบายความเสี่ยงและโอกาสที่ซ่อนอยู่ในรูปแบบ framework ของการลงทุนจริง
     ให้ทั้งสองคนผลัดกันโต้ตอบกันคนละ 2 รอบ เพื่อเค้นเอาข้อมูลและจุดเสี่ยงที่ซ่อนอยู่ออกมาให้ได้มากที่สุด
     """
     
@@ -55,12 +55,12 @@ def run_agent_workflow():
 
     จงทำหน้าที่สรุปและตัดสินใจขั้นสุดท้าย (Final Decision) โดยมีเงื่อนไขดังนี้:
     1. ชั่งน้ำหนักเหตุผลของทั้งสองฝ่ายอย่างเป็นกลางบนฐานของข้อมูลข่าวจริง
-    2. ฟันธงข้อสรุปคำแนะนำ (เช่น ซื้อเพิ่ม 20%, คงพอร์ตไว้, หรือทยอยขาย)
+    2. ฟันธงข้อสรุปคำแนะนำ (เช่น ซื้อเพิ่ม 20%, คงพอร์ตไว้, หรือทยอยขาย, ไม่ทำอะไรวิเคราะห์เฉยๆ)
     3. ร่างรายงานสรุปผู้บริหาร (Executive Summary) เป็นภาษาไทยที่กระชับ เป็นข้อๆ
 
     โครงสร้างรายงาน:
     - 📊 **สรุปสถานการณ์จากข่าวจริงล่าสุด**
-    - ⚔️ **ประเด็นขัดแย้งสำคัญ (Bull vs Bear)**
+    - ⚔️ **ประเด็นพิจารณา**
     - 🎯 **การตัดสินใจขั้นสุดท้ายของ CIO**
     - ⚠️ **ความเสี่ยงที่ต้องเฝ้าระวัง**
     """
@@ -104,8 +104,32 @@ def run_agent_workflow():
         requests.post(DISCORD_WEBHOOK_URL, json=payload)
 
 # 🌐 ท่อนรับสัญญาณเว็บของ Vercel (เมื่อ Cron-Job.org ยิงมา)
+# class handler(BaseHTTPRequestHandler):
+#     def do_GET(self):
+#         try:
+#             print("🚀 เว็บโดนปลุก! เริ่มรันระบบ Agent Workflow...")
+#             run_agent_workflow()
+            
+#             # ตอบกลับไปหา Cron-Job.org ว่าทำงานเสร็จแล้วนะ
+#             self.send_response(200)
+#             self.send_header('Content-type', 'text/plain; charset=utf-8')
+#             self.end_headers()
+#             self.wfile.write("บอททำงานและส่ง Discord สำเร็จเรียบร้อยแล้ว!".encode('utf-8'))
+#         except Exception as e:
+#             self.send_response(500)
+#             self.end_headers()
+#             self.wfile.write(f"เกิดข้อผิดพลาด: {e}".encode('utf-8'))
+
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        # 1. ดักจับไฟล์ favicon.ico หรือ path อื่นๆ ที่ระบบส่งพ่วงมา ให้ตอบ 200 ปัดตกไปทันที ไม่ต้องรันโค้ด
+        if self.path != '/' and self.path != '':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain; charset=utf-8')
+            self.end_headers()
+            self.wfile.write("Ignored non-main request".encode('utf-8'))
+            return
+
         try:
             print("🚀 เว็บโดนปลุก! เริ่มรันระบบ Agent Workflow...")
             run_agent_workflow()
@@ -116,6 +140,7 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write("บอททำงานและส่ง Discord สำเร็จเรียบร้อยแล้ว!".encode('utf-8'))
         except Exception as e:
+            print(f"❌ เกิดข้อผิดพลาดหลังบ้าน: {e}")
             self.send_response(500)
             self.end_headers()
             self.wfile.write(f"เกิดข้อผิดพลาด: {e}".encode('utf-8'))
